@@ -11,6 +11,6 @@
 #include "poly.h"
 #include "mat.h"
 
-void extract(POLY_64 *t, const MAT_64 *basis, const POLY_64 *a, const uint64_t l);
+void extract(POLY_64 *t, const MAT_FFT *fft_basis, const POLY_64 *a, const uint64_t l, const MAT_FFT *tree_root, const POLY_FFT *tree_dim2);
 
 #endif

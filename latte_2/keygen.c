@@ -21,6 +21,8 @@
 #include <mpfr.h>
 #include <mpc.h>
 
+#include "sample_fft.h"
+
 #define SAMPLE_B_LEN 2091
 #define SAMPLE_B_BYTE 4
 #define SAMPLE_B_BOUND 4294443136
@@ -425,21 +427,24 @@ static void ntru_basis(POLY_64 *f, POLY_64 *g, POLY_64 *F, POLY_64 *G)
 	poly_z_clear(&G_z, N);
 }
 
-void keygen(MAT_64 *basis, POLY_64 *h, const unsigned char *seed)
+void keygen(MAT_FFT *fft_basis, POLY_64 *h, const unsigned char *seed, MAT_FFT *tree_root, POLY_FFT *tree_dim2)
 {
 	static POLY_64 f_ntt, g_ntt;
 	
-	uint64_t i;
+	uint64_t i, j, p;
 	
 	int64_t tmp;
+	
+	static MAT_64 basis;
+	static MAT_FFT g;
 	
 	fastrandombytes_setseed(seed);
 	
 	do
 	{
-		ntru_basis(&(basis->mat[0][1]), &(basis->mat[0][0]), &(basis->mat[1][1]), &(basis->mat[1][0]));
+		ntru_basis(&(basis.mat[0][1]), &(basis.mat[0][0]), &(basis.mat[1][1]), &(basis.mat[1][0]));
 		
-		memcpy(&f_ntt, &(basis->mat[0][1]), sizeof(POLY_64));
+		memcpy(&f_ntt, &(basis.mat[0][1]), sizeof(POLY_64));
 		ntt(&f_ntt);
 		
 		/* check invertibility of f over R_q */
@@ -450,7 +455,7 @@ void keygen(MAT_64 *basis, POLY_64 *h, const unsigned char *seed)
 		}
 	} while (tmp);
 	
-	memcpy(&g_ntt, &(basis->mat[0][0]), sizeof(POLY_64));
+	memcpy(&g_ntt, &(basis.mat[0][0]), sizeof(POLY_64));
 	ntt(&g_ntt);
 	
 	/* h = g * f^{-1} mod q */
@@ -464,7 +469,24 @@ void keygen(MAT_64 *basis, POLY_64 *h, const unsigned char *seed)
 	 * G | -F */
 	for (i = 0; i < N; i++)
 	{
-		basis->mat[0][1].poly[i] = -basis->mat[0][1].poly[i];
-		basis->mat[1][1].poly[i] = -basis->mat[1][1].poly[i];
+		basis.mat[0][1].poly[i] = -basis.mat[0][1].poly[i];
+		basis.mat[1][1].poly[i] = -basis.mat[1][1].poly[i];
 	}
+	
+	for (i = 0; i < 2; i++)
+	{
+		for (j = 0; j < 2; j++)
+		{
+			for (p = 0; p < N; p++)
+			{
+				fft_basis->mat[i][j].poly[p] = basis.mat[i][j].poly[p];
+			}
+			
+			fft(&(fft_basis->mat[i][j]), N);
+		}
+	}
+	
+	gram(&g, fft_basis, 2, N);
+	
+	fft_ldl(tree_root, tree_dim2, &g, 2, sigma_l[1]);
 }

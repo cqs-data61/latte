@@ -31,13 +31,16 @@ int main()
 	
 	uint64_t ret;
 	
-	static MAT_64 basis;
+	static MAT_FFT fft_basis;
 	static POLY_64 h;
 	static POLY_64 a[L + 1];
 	static POLY_64 t[L];
 	static POLY_64 c[L + 1];
 	
 	long long cycle1, cycle2, cycle3, cycle4, cycle5, cycle6, cycle7;
+	
+	static MAT_FFT tree_root;
+	static POLY_FFT tree_dim2[(L + 1) * (N - 1)];
 	
 	srand(time(NULL));
 	
@@ -49,7 +52,7 @@ int main()
 		randombytes(seed, 32);
 		
 		cycle1 = cpucycles();
-		keygen(&basis, &h, seed);
+		keygen(&fft_basis, &h, seed, &tree_root, tree_dim2);
 		cycle2 = cpucycles();
 		
 		for (i = 0; i < N; i++)
@@ -59,7 +62,7 @@ int main()
 		}
 
 		cycle3 = cpucycles();
-		extract(t, &basis, a + 1, 1);
+		extract(t, &fft_basis, a + 1, 1, &tree_root, tree_dim2);
 		cycle4 = cpucycles();
 		
 		randombytes(mu, 32);
