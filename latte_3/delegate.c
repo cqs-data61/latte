@@ -19,16 +19,13 @@
 
 #include <gmp.h>
 
-void delegate(MAT_64 *s, const MAT_64 *basis, const POLY_64 *a, const uint64_t l, const unsigned char *seed)
+void delegate(MAT_FFT *s_fft, MAT_FFT *s_tree_root, POLY_FFT *s_tree_dim2, const MAT_FFT *fft_basis, const POLY_64 *a, const uint64_t l, const unsigned char *seed, const MAT_FFT *tree_root, const POLY_FFT *tree_dim2)
 {
-	static MAT_FFT fft_basis;
+	static MAT_64 s;
 	static MAT_FFT basis_g;
-	static MAT_FFT tree_root;
-	static POLY_FFT tree_dim2[L * (N - 1)];
 	
 	static POLY_64 c_ntt;
 	static POLY_FFT c;
-	static MAT_FFT s_fft;
 	static POLY_FFT s_ifft;
 	
 	static POLY_FFT f_fft, g_fft;
@@ -59,24 +56,7 @@ void delegate(MAT_64 *s, const MAT_64 *basis, const POLY_64 *a, const uint64_t l
 	poly_z_init(&g, N);
 	poly_z_init(&F, N);
 	poly_z_init(&G, N);
-	
-	for (i = 0; i < l + 1; i++)
-	{
-		for (j = 0; j < l + 1; j++)
-		{
-			for (p = 0; p < N; p++)
-			{
-				fft_basis.mat[i][j].poly[p] = basis->mat[i][j].poly[p];
-			}
-			
-			fft(&(fft_basis.mat[i][j]), N);
-		}
-	}
-	
-	gram(&basis_g, &fft_basis, l + 1, N);
-	
-	fft_ldl(&tree_root, tree_dim2, &basis_g, l + 1, sigma_l[l]);
-	
+		
 	while (1)
 	{
 		for (i = 0; i < l + 1; i++)
@@ -88,11 +68,11 @@ void delegate(MAT_64 *s, const MAT_64 *basis, const POLY_64 *a, const uint64_t l
 				for (p = 0; p < N; p++)
 				{
 					/* s_{i, l + 1} <-- (D_{\sigma_l})^N */
-					s->mat[i][l + 1].poly[p] = sample_z(0, sigma_l[l]);
+					s.mat[i][l + 1].poly[p] = sample_z(0, sigma_l[l]);
 					
-					c_ntt.poly[p] = -(s->mat[i][l + 1].poly[p]);
+					c_ntt.poly[p] = -(s.mat[i][l + 1].poly[p]);
 					
-					norm += s->mat[i][l + 1].poly[p] * s->mat[i][l + 1].poly[p];
+					norm += s.mat[i][l + 1].poly[p] * s.mat[i][l + 1].poly[p];
 				}
 				
 				ntt(&c_ntt);
@@ -113,22 +93,22 @@ void delegate(MAT_64 *s, const MAT_64 *basis, const POLY_64 *a, const uint64_t l
 				fft(&c, N);
 				
 				/* sample preimage */
-				sample_preimage(s_fft.mat[i], &fft_basis, &tree_root, tree_dim2, &c, l + 1, 0);
+				sample_preimage(s_fft->mat[i], fft_basis, tree_root, tree_dim2, &c, l + 1, 0);
 				
 				for (j = 0; j < l + 1; j++)
 				{
 					for (p = 0; p < N; p++)
 					{
-						s_ifft.poly[p] = s_fft.mat[i][j].poly[p];
+						s_ifft.poly[p] = s_fft->mat[i][j].poly[p];
 					}
 					
 					ifft(&s_ifft, N);
 					
 					for (p = 0; p < N; p++)
 					{
-						s->mat[i][j].poly[p] = roundq(crealq(s_ifft.poly[p]));
+						s.mat[i][j].poly[p] = roundq(crealq(s_ifft.poly[p]));
 						
-						norm += s->mat[i][j].poly[p] * s->mat[i][j].poly[p];
+						norm += s.mat[i][j].poly[p] * s.mat[i][j].poly[p];
 					}
 				}
 				/* ||(s_{i, 0},...,s_{i, l + 1}|| ?> \sqrt{(l + 2)N} * \sigma_l */
@@ -136,10 +116,10 @@ void delegate(MAT_64 *s, const MAT_64 *basis, const POLY_64 *a, const uint64_t l
 			
 			for (p = 0; p < N; p++)
 			{
-				s_fft.mat[i][l + 1].poly[p] = s->mat[i][l + 1].poly[p];
+				s_fft->mat[i][l + 1].poly[p] = s.mat[i][l + 1].poly[p];
 			}
 			
-			fft(&(s_fft.mat[i][l + 1]), N);
+			fft(&(s_fft->mat[i][l + 1]), N);
 		}
 		
 		/* ModFalcon method to solve NTRU euqation for dim > 2 
@@ -148,8 +128,8 @@ void delegate(MAT_64 *s, const MAT_64 *basis, const POLY_64 *a, const uint64_t l
 		{
 			for (p = 0; p < N; p++)
 			{
-				f_fft.poly[p] = s_fft.mat[0][1].poly[p] * s_fft.mat[1][2].poly[p] - s_fft.mat[0][2].poly[p] * s_fft.mat[1][1].poly[p];				
-				g_fft.poly[p] = s_fft.mat[0][0].poly[p] * s_fft.mat[1][2].poly[p] - s_fft.mat[0][2].poly[p] * s_fft.mat[1][0].poly[p];
+				f_fft.poly[p] = s_fft->mat[0][1].poly[p] * s_fft->mat[1][2].poly[p] - s_fft->mat[0][2].poly[p] * s_fft->mat[1][1].poly[p];				
+				g_fft.poly[p] = s_fft->mat[0][0].poly[p] * s_fft->mat[1][2].poly[p] - s_fft->mat[0][2].poly[p] * s_fft->mat[1][0].poly[p];
 			}
 		}
 		
@@ -186,7 +166,7 @@ void delegate(MAT_64 *s, const MAT_64 *basis, const POLY_64 *a, const uint64_t l
 		{
 			for (p = 0; p < N; p++)
 			{
-				s_fft_head.mat[i][j].poly[p] = conjq(s_fft.mat[i][j].poly[p]);
+				s_fft_head.mat[i][j].poly[p] = conjq(s_fft->mat[i][j].poly[p]);
 			}
 		}
 	}
@@ -205,7 +185,7 @@ void delegate(MAT_64 *s, const MAT_64 *basis, const POLY_64 *a, const uint64_t l
 			{
 				for (p = 0; p < N; p++)
 				{
-					s_g.mat[i][j].poly[p] = s_g.mat[i][j].poly[p] + s_fft_head.mat[i][k].poly[p] * s_fft.mat[j][k].poly[p];
+					s_g.mat[i][j].poly[p] = s_g.mat[i][j].poly[p] + s_fft_head.mat[i][k].poly[p] * s_fft->mat[j][k].poly[p];
 				}
 			}
 		}
@@ -221,12 +201,12 @@ void delegate(MAT_64 *s, const MAT_64 *basis, const POLY_64 *a, const uint64_t l
 	}
 	
 	for (p = 0; p < N; p++)
-	{		
-		s->mat[2][0].poly[p] = mpz_get_si(G.poly[p]);
-		G_fft.poly[p] = s->mat[2][0].poly[p];
+	{
+		s.mat[2][0].poly[p] = mpz_get_si(G.poly[p]);
+		G_fft.poly[p] = s.mat[2][0].poly[p];
 		
-		s->mat[2][1].poly[p] = mpz_get_si(F.poly[p]);
-		F_fft.poly[p] = s->mat[2][1].poly[p];
+		s.mat[2][1].poly[p] = mpz_get_si(F.poly[p]);
+		F_fft.poly[p] = s.mat[2][1].poly[p];
 	}
 	
 	fft(&F_fft, N);
@@ -255,22 +235,22 @@ void delegate(MAT_64 *s, const MAT_64 *basis, const POLY_64 *a, const uint64_t l
 			k_red.poly[p] = roundq(crealq(k_red_fft.poly[p]));
 		}
 		
-		poly_mul_6464(&ks, &k_red, s->mat[0], N);
+		poly_mul_6464(&ks, &k_red, s.mat[0], N);
 		for (p = 0; p < N; p++)
 		{
-			s->mat[2][0].poly[p] = s->mat[2][0].poly[p] - ks.poly[p];
+			s.mat[2][0].poly[p] = s.mat[2][0].poly[p] - ks.poly[p];
 		}
 		
-		poly_mul_6464(&ks, &k_red, s->mat[0] + 1, N);
+		poly_mul_6464(&ks, &k_red, s.mat[0] + 1, N);
 		for (p = 0; p < N; p++)
 		{
-			s->mat[2][1].poly[p] = s->mat[2][1].poly[p] - ks.poly[p];
+			s.mat[2][1].poly[p] = s.mat[2][1].poly[p] - ks.poly[p];
 		}
 		
-		poly_mul_6464(&ks, &k_red, s->mat[0] + 2, N);
+		poly_mul_6464(&ks, &k_red, s.mat[0] + 2, N);
 		for (p = 0; p < N; p++)
 		{
-			s->mat[2][2].poly[p] = -ks.poly[p];
+			s.mat[2][2].poly[p] = -ks.poly[p];
 		}
 		
 		for (p = 0; p < N; p++)
@@ -285,23 +265,38 @@ void delegate(MAT_64 *s, const MAT_64 *basis, const POLY_64 *a, const uint64_t l
 			k_red.poly[p] = roundq(crealq(k_red_fft.poly[p]));
 		}
 		
-		poly_mul_6464(&ks, &k_red, s->mat[1], N);
+		poly_mul_6464(&ks, &k_red, s.mat[1], N);
 		for (p = 0; p < N; p++)
 		{
-			s->mat[2][0].poly[p] = s->mat[2][0].poly[p] - ks.poly[p];
+			s.mat[2][0].poly[p] = s.mat[2][0].poly[p] - ks.poly[p];
 		}
 		
-		poly_mul_6464(&ks, &k_red, s->mat[1] + 1, N);
+		poly_mul_6464(&ks, &k_red, s.mat[1] + 1, N);
 		for (p = 0; p < N; p++)
 		{
-			s->mat[2][1].poly[p] = s->mat[2][1].poly[p] - ks.poly[p];
+			s.mat[2][1].poly[p] = s.mat[2][1].poly[p] - ks.poly[p];
 		}
 		
-		poly_mul_6464(&ks, &k_red, s->mat[1] + 2, N);
+		poly_mul_6464(&ks, &k_red, s.mat[1] + 2, N);
 		for (p = 0; p < N; p++)
 		{
-			s->mat[2][2].poly[p] = s->mat[2][2].poly[p] - ks.poly[p];
+			s.mat[2][2].poly[p] = s.mat[2][2].poly[p] - ks.poly[p];
 		}
+		
+		for (p = 0; p < N; p++)
+		{
+			s_fft->mat[2][0].poly[p] = s.mat[2][0].poly[p];
+			s_fft->mat[2][1].poly[p] = s.mat[2][1].poly[p];
+			s_fft->mat[2][2].poly[p] = s.mat[2][2].poly[p];
+		}
+		
+		fft(s_fft->mat[2], N);
+		fft(s_fft->mat[2] + 1, N);
+		fft(s_fft->mat[2] + 2, N);
+		
+		gram(&basis_g, s_fft, l + 2, N);
+		
+		fft_ldl(s_tree_root, s_tree_dim2, &basis_g, l + 2, sigma_l[l + 1]);
 	}
 	
 	poly_z_clear(&f, N);
