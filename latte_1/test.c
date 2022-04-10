@@ -52,7 +52,7 @@ int main()
 		randombytes(seed, 32);
 		
 		cycle1 = cpucycles();
-		keygen(&fft_basis, &h, seed, &tree_root, tree_dim2);
+		keygen(&fft_basis, &tree_root, tree_dim2, &h, seed);
 		cycle2 = cpucycles();
 		
 		for (i = 0; i < N; i++)

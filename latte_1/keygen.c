@@ -427,7 +427,7 @@ static void ntru_basis(POLY_64 *f, POLY_64 *g, POLY_64 *F, POLY_64 *G)
 	poly_z_clear(&G_z, N);
 }
 
-void keygen(MAT_FFT *fft_basis, POLY_64 *h, const unsigned char *seed, MAT_FFT *tree_root, POLY_FFT *tree_dim2)
+void keygen(MAT_FFT *fft_basis, MAT_FFT *tree_root, POLY_FFT *tree_dim2, POLY_64 *h, const unsigned char *seed)
 {
 	static POLY_64 f_ntt, g_ntt;
 	
