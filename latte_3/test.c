@@ -76,8 +76,10 @@ int main()
 		ret1 = decrypt(mu, z, c, a, t, 1);
 		cycle7 = cpucycles();
 		
+		randombytes(seed, 32);
+		
 		cycle8 = cpucycles();
-		delegate(fft_basis + 1, tree_root + 1, tree_dim2[1], fft_basis, a + 1, 1, tree_root, tree_dim2[0]);
+		delegate(fft_basis + 1, tree_root + 1, tree_dim2[1], fft_basis, a + 1, 1, seed, tree_root, tree_dim2[0]);
 		cycle9 = cpucycles();
 		
 		cycle10 = cpucycles();
