@@ -31,7 +31,7 @@ void extract(POLY_64 *t, const MAT_FFT *fft_basis, const POLY_64 *a, const uint6
 	uint64_t i, p;
 	
 	memcpy(hash_in, a->poly, sizeof(int64_t) * N);
-	hash_in[sizeof(int64_t) * N] = 'G';
+	hash_in[sizeof(int64_t) * N] = 'E';
 	
 	SHAKE256(seed, 32, hash_in, sizeof(int64_t) * N + 1);
 	
