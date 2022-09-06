@@ -105,16 +105,4 @@ static inline int64_t inverse(int64_t a)
 	return con_add(t, Q);
 }
 
-/* Barrett reduction
- * Input: x < 2^k
- * Output m = x % Q in [0, 2Q)
- * 
- * b = floor(2^k/Q)
- * t = floor((x * b) / 2^k), where t is an estimation of x / Q
- * m = x - t * Q */
-static inline uint64_t barrett(const uint64_t x, const uint64_t barrett_factor, const uint64_t barrett_shift)
-{
-	return con_sub(x - ((x * barrett_factor) >> barrett_shift) * Q, Q);
-}
-
 #endif
