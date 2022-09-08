@@ -80,7 +80,7 @@ void delegate(MAT_FFT *s_fft, MAT_FFT *s_tree_root, POLY_FFT *s_tree_dim2, const
 				/* c = -s_{i, l + 1} * A_l */
 				for (p = 0; p < N; p++)
 				{
-					c_ntt.poly[p] = montgomery(c_ntt.poly[p], a->poly[p]);
+					c_ntt.poly[p] = red_plantard(c_ntt.poly[p], a->poly[p]);
 				}
 				
 				intt(&c_ntt);
