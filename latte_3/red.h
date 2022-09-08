@@ -22,66 +22,23 @@ static inline uint64_t con_add(const uint64_t x, const uint64_t q)
 	return x + ((-(x >> 63)) & q);
 }
 
-#define RED_SHORT_SHIFT_1 36
-#define RED_SHORT_SHIFT_2 20
-#define RED_SHORT_MASK ((1LL << RED_SHORT_SHIFT_1) - 1)
+static const __uint128_t RED_PLANTARD_R = (((__uint128_t)51210905920262400ULL)<<64)|1008807347324190721ULL;
+#define RED_PLANTARD_SHIFT 64
+static const __uint128_t RED_PLANTARD_CONVERT_FACTOR = (((__uint128_t)17627358751207581379ULL)<<64)|12061212603876093425ULL;
+static const __uint128_t RED_PLANTARD_INV_FACTOR = (((__uint128_t)12607732421369476169ULL)<<64)|14509285280105694240ULL; 
 
-/* low hamming weight reduction
- * for q=2^(k_1) +/- 2^(k_2) + 1, k_1>k_2, and input x
- * x=u*2^(k_1)+v mod q=u*(-/+ 2^(k_2)-1)+v mod q */
-static inline uint64_t red_short(uint64_t t)
+static inline uint64_t red_plantard(__uint128_t a, __uint128_t b)
 {
-	uint64_t x, y;
-	
-	x = t >> RED_SHORT_SHIFT_1;
-	y = t & RED_SHORT_MASK;
-	
-	return con_sub(y + (x << RED_SHORT_SHIFT_2) - x, Q);
+	__uint128_t c;
+	c = a * b * RED_PLANTARD_R;
+	return (((c >> RED_PLANTARD_SHIFT) + 1) * Q) >> RED_PLANTARD_SHIFT;
 }
 
-#define MONTGOMERY_FACTOR 1048577
-#define MONTGOMERY_SHIFT 28
-#define MONTGOMERY_MASK ((1LL << MONTGOMERY_SHIFT) - 1)
-#define MONTGOMERY_CONVERT_FACTOR 15728624LL
-#define MONTGOMERY_INV_FACTOR 60129480704LL
-
-#define MONTGOMERY_SEP_SHIFT 31
-#define MONTGOMERY_SEP_MASK ((1LL << MONTGOMERY_SEP_SHIFT) - 1)
-#define MONTGOMERY_SEP_HI 17179869184LL
-/* Montgomery reduction
- * Input: x < Q*R, where R=2^k
- * Output: m = x*R^{-1} % Q
- * 
- * b = Q^{-1} % R
- * t = ((x % R)*b) % R
- * m = x / R - t * Q / R */
-static inline uint64_t montgomery_32(uint64_t a, uint64_t b)
+static inline uint64_t red_plantard_const(__uint128_t a, __uint128_t b)
 {
-	uint64_t t, x, y;
-	
-	t = a * b;
-	x = t & MONTGOMERY_MASK;
-	y = (x * MONTGOMERY_FACTOR) & MONTGOMERY_MASK;
-
-	return con_add((t >> MONTGOMERY_SHIFT) - ((y * Q) >> MONTGOMERY_SHIFT), Q);
-}
-
-static inline uint64_t montgomery(uint64_t a, uint64_t b)
-{
-	uint64_t a0, a1, b0, b1;
-	uint64_t x0, x1, x2;
-	
-	a0 = a & MONTGOMERY_SEP_MASK;
-	a1 = a >> MONTGOMERY_SEP_SHIFT;
-	b0 = b & MONTGOMERY_SEP_MASK;
-	b1 = b >> MONTGOMERY_SEP_SHIFT;
-	
-	x0 = montgomery_32(a0, b0);
-	x1 = a0 * b1 + a1 * b0;
-	x2 = (a1 * b1 + (x1 >> MONTGOMERY_SEP_SHIFT)) * MONTGOMERY_SEP_HI;
-	x1 = montgomery_32(x1 & MONTGOMERY_SEP_MASK, 1LL << MONTGOMERY_SEP_SHIFT);
-	
-	return red_short(x0 + x1 + x2);
+	__uint128_t c;
+	c = a * b;
+	return (((c >> RED_PLANTARD_SHIFT) + 1) * Q) >> RED_PLANTARD_SHIFT;
 }
 
 /* Modular inverse mod q */

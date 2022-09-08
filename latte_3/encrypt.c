@@ -61,7 +61,7 @@ void encrypt(unsigned char *z, POLY_64 *c, const unsigned char *mu, const POLY_6
 	{
 		for (p = 0; p < N; p++)
 		{
-			c[i].poly[p] = con_sub(montgomery(a[i].poly[p], e.poly[p]) + e_l[i].poly[p], Q);
+			c[i].poly[p] = con_sub(red_plantard(a[i].poly[p], e.poly[p]) + e_l[i].poly[p], Q);
 		}
 	}
 	
@@ -73,7 +73,7 @@ void encrypt(unsigned char *z, POLY_64 *c, const unsigned char *mu, const POLY_6
 	/* C_l = A_l * e + e_l + m */
 	for (p = 0; p < N; p++)
 	{
-		c[l].poly[p] = con_sub(montgomery(a[l].poly[p], e.poly[p]) + e_l[l].poly[p], Q);
+		c[l].poly[p] = con_sub(red_plantard(a[l].poly[p], e.poly[p]) + e_l[l].poly[p], Q);
 		c[l].poly[p] = con_sub(c[l].poly[p] + m.poly[p], Q);
 	}
 }
