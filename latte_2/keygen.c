@@ -461,7 +461,7 @@ void keygen(MAT_FFT *fft_basis, MAT_FFT *tree_root, POLY_FFT *tree_dim2, POLY_64
 	/* h = g * f^{-1} mod q */
 	for (i = 0; i < N; i++)
 	{
-		h->poly[i] = montgomery(montgomery(g_ntt.poly[i], inverse(f_ntt.poly[i])), MONTGOMERY_INV_FACTOR);
+		h->poly[i] = red_plantard_const(red_plantard(g_ntt.poly[i], inverse(f_ntt.poly[i])), RED_PLANTARD_INV_FACTOR);
 	}
 	
 	/* g | -f

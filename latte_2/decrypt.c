@@ -37,7 +37,7 @@ uint64_t decrypt(unsigned char *mu, const unsigned char *z, const POLY_64 *c, co
 	{
 		for (p = 0; p < N; p++)
 		{
-			v.poly[p] = con_add(v.poly[p] - montgomery(c[i].poly[p], t[i].poly[p]), Q);
+			v.poly[p] = con_add(v.poly[p] - red_plantard(c[i].poly[p], t[i].poly[p]), Q);
 		}
 	}
 	
@@ -70,7 +70,7 @@ uint64_t decrypt(unsigned char *mu, const unsigned char *z, const POLY_64 *c, co
 	{
 		for (p = 0; p < N; p++)
 		{
-			c_prime[i].poly[p] = con_sub(montgomery(a[i].poly[p], e.poly[p]) + e_l[i].poly[p], Q);
+			c_prime[i].poly[p] = con_sub(red_plantard(a[i].poly[p], e.poly[p]) + e_l[i].poly[p], Q);
 		}
 	}
 	
@@ -82,7 +82,7 @@ uint64_t decrypt(unsigned char *mu, const unsigned char *z, const POLY_64 *c, co
 	/* C_b' = b * e' + e_b' + m' */
 	for (p = 0; p < N; p++)
 	{
-		c_prime[l].poly[p] = con_sub(montgomery(a[l].poly[p], e.poly[p]) + e_l[l].poly[p], Q);
+		c_prime[l].poly[p] = con_sub(red_plantard(a[l].poly[p], e.poly[p]) + e_l[l].poly[p], Q);
 		c_prime[l].poly[p] = con_sub(c_prime[l].poly[p] + m.poly[p], Q);
 	}
 	
