@@ -100,7 +100,7 @@ void delegate(MAT_64 *s, const MAT_64 *basis, const POLY_64 *a, const uint64_t l
 				/* c = -s_{i, l + 1} * A_l */
 				for (p = 0; p < N; p++)
 				{
-					c_ntt.poly[p] = montgomery(c_ntt.poly[p], a->poly[p]);
+					c_ntt.poly[p] = red_plantard(c_ntt.poly[p], a->poly[p]);
 				}
 				
 				intt(&c_ntt);
