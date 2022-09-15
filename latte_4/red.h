@@ -16,7 +16,7 @@ static inline uint64_t con_sub(const uint64_t x, const uint64_t q)
 	return x - ((-(1 ^ ((x - q) >> 63))) & q);
 }
 
-/* x + q if x <= q */
+/* x + q if x <= 0 */
 static inline uint64_t con_add(const uint64_t x, const uint64_t q)
 {
 	return x + ((-(x >> 63)) & q);
@@ -27,6 +27,9 @@ static const __uint128_t RED_PLANTARD_R = (((__uint128_t)18427605699237269502ULL
 static const __uint128_t RED_PLANTARD_CONVERT_FACTOR = (((__uint128_t)36038694771490876ULL)<<64)|126105184658915024ULL; 
 static const __uint128_t RED_PLANTARD_INV_FACTOR = (((__uint128_t)1171142641370202111ULL)<<64)|16428431980493007152ULL; 
 
+/* Plantard's multiplication modular reduction from:
+ * Thomas Plantard. Efficient Word Size Modular Arithmetic. IEEE Trans. Emerg. Top. Comput. 9(3): 1506-1518 (2021)
+ * https://ieeexplore.ieee.org/document/9416314 */
 static inline uint64_t red_plantard(__uint128_t a, __uint128_t b)
 {
 	__uint128_t c;
